@@ -1,0 +1,59 @@
+# ---- Audit / harness output ----
+results/*
+!results/.gitkeep
+*.csv
+*.log
+
+# ---- Secrets / local config (never commit) ----
+*.env
+.env
+*.secret
+*credentials*
+*.pat
+
+# ---- VM artifacts ----
+*.vmx
+*.vmdk
+*.vmem
+*.vmss
+*.vmsn
+*.nvram
+*.vmsd
+*.vmxf
+*.lck/
+vmware.log
+*.vbox
+*.vdi
+*.vhd
+*.vhdx
+*.iso
+
+# ---- grandMA2 / MA installers & showfiles (do not redistribute) ----
+*.exe
+*.zip
+*.imgz
+*.update
+*.show.gz
+installers/
+
+# ---- PowerShell ----
+*.ps1xml.bak
+PSReadLine/
+*.tmp
+
+# ---- OS cruft ----
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+$RECYCLE.BIN/
+
+# ---- Editor ----
+.vs/
+.vscode/
+*.suo
+*.user
+*~
+
+# ---- Local agent/session config ----
+.claude/settings.local.json
