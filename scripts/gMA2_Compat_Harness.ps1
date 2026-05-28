@@ -21,9 +21,21 @@
 #    - One linked clone per version, each with a 'clean-install'
 #      snapshot (onPC + tool already installed)
 #    - A test-runner the harness can invoke inside or against the guest
+#
+#  DEMO / DRY-RUN:
+#    Run with -DryRun to exercise the full orchestration WITHOUT VMware,
+#    real VMs, or MA software. vmrun calls are mocked, boot waits are
+#    skipped, the .vmx existence check is bypassed, and the Test-* hooks
+#    emit a realistic P / EXP-F / N/A matrix. Output CSV is written next
+#    to the script under ../results/. Use this to demo the flow:
+#        pwsh ./scripts/gMA2_Compat_Harness.ps1 -DryRun
 # ================================================================
 
 #Requires -Version 5.1
+
+param(
+    [switch]$DryRun   # mock VMware + emit sample results; no real VMs needed
+)
 
 # ---------------------------------------------------------------
 # CONFIG
@@ -34,6 +46,13 @@ $Snapshot  = "clean-install"               # snapshot to revert to per pass
 $ResultsCsv= "E:\IT_Logs\NOMAD\gMA2_compat_results_$(Get-Date -Format 'yyyyMMdd_HHmmss').csv"
 $GuestUser = "QAadmin"                      # local admin inside the guest
 $GuestPass = "REPLACE_ME"                   # consider a SecureString / vault
+
+# In dry-run, write the demo CSV beside the repo (results/) instead of E:\.
+if ($DryRun) {
+    $resultsDir = Join-Path (Split-Path -Parent $PSScriptRoot) "results"
+    if (!(Test-Path $resultsDir)) { New-Item -ItemType Directory -Path $resultsDir -Force | Out-Null }
+    $ResultsCsv = Join-Path $resultsDir "demo_results_$(Get-Date -Format 'yyyyMMdd_HHmmss').csv"
+}
 
 # Version manifest. Set 'Obtainable=$false' to auto-skip (logs BLK).
 # 'Vmx' is the clone path; 'BaseOS' is informational.
@@ -72,6 +91,7 @@ function Log($msg, $color="Gray") { Write-Host "[$(Get-Date -Format HH:mm:ss)] $
 
 function Invoke-VmRun {
     param([string[]]$VmArgs)
+    if ($DryRun) { Log "    [dry-run] vmrun $($VmArgs -join ' ')" "DarkGray"; return }
     & $VmRun @VmArgs 2>&1
 }
 
@@ -80,7 +100,7 @@ function Restore-VmAndStart($vmx) {
     Invoke-VmRun @("-T","ws","revertToSnapshot",$vmx,$Snapshot) | Out-Null
     Log "  start" "Cyan"
     Invoke-VmRun @("-T","ws","start",$vmx,"nogui") | Out-Null
-    Start-Sleep -Seconds 30   # let the guest boot + onPC services settle
+    if (-not $DryRun) { Start-Sleep -Seconds 30 }   # let the guest boot + onPC services settle
 }
 
 function Stop-Vm($vmx) {
@@ -95,6 +115,8 @@ function Stop-Vm($vmx) {
 # invocations of your tool against the running guest.
 # ---------------------------------------------------------------
 function Test-Showfiles($entry) {
+    # A4 is a NEGATIVE test (newer showfile in older onPC) -> success = EXP-F.
+    if ($DryRun) { return @{ A1="P"; A2="P"; A3="P"; A4="EXP-F"; A5="P" } }
     # TODO: run your .show.gz parse/export/round-trip tests against the guest.
     # Example pattern using runProgramInGuest:
     #   Invoke-VmRun @("-T","ws","-gu",$GuestUser,"-gp",$GuestPass,
@@ -105,26 +127,36 @@ function Test-Showfiles($entry) {
 
 function Test-Network($entry) {
     # Group rule: only join a live MA-Net2 session with same ProtocolEra peers.
-    # B4 cross-era is a NEGATIVE test -> success = clean no-join.
+    # B4 cross-era is a NEGATIVE test -> success = clean no-join (EXP-F).
+    if ($DryRun) {
+        $osc = if ([version]$entry.Branch -ge [version]"3.0") { "P" } else { "N/A" }  # OSC arrives in the 3.x line
+        return @{ B1="P"; B2=$osc; B3="P"; B4="EXP-F"; B5="P" }
+    }
     return @{ B1="N/A"; B2="N/A"; B3="N/A"; B4="N/A"; B5="N/A" }
 }
 
 function Test-DMX($entry) {
-    # Requires real MA hardware on the bridge for parameter unlock.
+    # Requires real MA hardware on the bridge for parameter unlock (C3 stays N/A in dry-run).
+    if ($DryRun) {
+        $sacn = if ([version]$entry.Branch -ge [version]"3.0") { "P" } else { "N/A" }  # sACN (E1.31) support era
+        return @{ C1="P"; C2=$sacn; C3="N/A"; C4="P" }
+    }
     return @{ C1="N/A"; C2="N/A"; C3="N/A"; C4="N/A" }
 }
 
 function Test-FixtureXML($entry) {
+    if ($DryRun) { return @{ D1="P"; D2="P"; D3="P"; D4="P" } }
     return @{ D1="N/A"; D2="N/A"; D3="N/A"; D4="N/A" }
 }
 
 # ---------------------------------------------------------------
 # MAIN LOOP
 # ---------------------------------------------------------------
-if (-not (Test-Path $VmRun)) { Log "vmrun not found at $VmRun" "Red"; exit 1 }
+if (-not $DryRun -and -not (Test-Path $VmRun)) { Log "vmrun not found at $VmRun" "Red"; exit 1 }
 $logDir = Split-Path $ResultsCsv; if (!(Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
 
 Log "=== grandMA2 onPC compatibility audit ===" "Green"
+if ($DryRun) { Log "*** DRY-RUN: VMware mocked, sample results emitted, no real VMs touched ***" "Magenta" }
 Log "Versions in manifest: $($Manifest.Count)" "Green"
 
 foreach ($entry in $Manifest) {
@@ -136,7 +168,7 @@ foreach ($entry in $Manifest) {
         "A1 A2 A3 A4 A5 B1 B2 B3 B4 B5 C1 C2 C3 C4 D1 D2 D3 D4".Split(" ") | ForEach-Object { $row[$_]="BLK" }
         $results.Add([pscustomobject]$row); continue
     }
-    if (-not (Test-Path $entry.Vmx)) {
+    if (-not $DryRun -and -not (Test-Path $entry.Vmx)) {
         Log "  MISSING VMX: $($entry.Vmx)" "Red"
         "A1 A2 A3 A4 A5 B1 B2 B3 B4 B5 C1 C2 C3 C4 D1 D2 D3 D4".Split(" ") | ForEach-Object { $row[$_]="BLK" }
         $results.Add([pscustomobject]$row); continue
