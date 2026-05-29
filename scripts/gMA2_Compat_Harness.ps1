@@ -44,8 +44,15 @@ $VmRun     = "C:\Program Files (x86)\VMware\VMware Workstation\vmrun.exe"
 $VmRoot    = "E:\VMs\gMA2-matrix"          # where the .vmx clones live
 $Snapshot  = "clean-install"               # snapshot to revert to per pass
 $ResultsCsv= "E:\IT_Logs\NOMAD\gMA2_compat_results_$(Get-Date -Format 'yyyyMMdd_HHmmss').csv"
-$GuestUser = "QAadmin"                      # local admin inside the guest
-$GuestPass = "REPLACE_ME"                   # consider a SecureString / vault
+
+# Guest VM login for runProgramInGuest. NEVER hardcode a password here.
+# Real runs resolve credentials in Get-GuestCredential (below): env vars
+# $env:GMA2_GUEST_USER / $env:GMA2_GUEST_PASS, else an interactive prompt.
+$GuestUser = if ($env:GMA2_GUEST_USER) { $env:GMA2_GUEST_USER } else { "QAadmin" }
+$GuestCredential = $null    # PSCredential, resolved lazily on first real use
+
+# Canonical column order for the results matrix (single source of truth).
+$TestIds = @('A1','A2','A3','A4','A5','B1','B2','B3','B4','B5','C1','C2','C3','C4','D1','D2','D3','D4')
 
 # In dry-run, write the demo CSV beside the repo (results/) instead of E:\.
 if ($DryRun) {
@@ -89,10 +96,28 @@ $results = New-Object System.Collections.Generic.List[object]
 
 function Log($msg, $color="Gray") { Write-Host "[$(Get-Date -Format HH:mm:ss)] $msg" -ForegroundColor $color }
 
+# Resolve guest credentials once (real runs only). Prefers env vars; falls back
+# to an interactive prompt. Returns $null in dry-run (no creds needed).
+function Get-GuestCredential {
+    if ($DryRun) { return $null }
+    if ($script:GuestCredential) { return $script:GuestCredential }
+    if ($env:GMA2_GUEST_PASS) {
+        $sec = ConvertTo-SecureString $env:GMA2_GUEST_PASS -AsPlainText -Force
+        $script:GuestCredential = [System.Management.Automation.PSCredential]::new($GuestUser, $sec)
+    } else {
+        $script:GuestCredential = Get-Credential -UserName $GuestUser -Message "grandMA2 guest VM login"
+    }
+    return $script:GuestCredential
+}
+
 function Invoke-VmRun {
     param([string[]]$VmArgs)
     if ($DryRun) { Log "    [dry-run] vmrun $($VmArgs -join ' ')" "DarkGray"; return }
-    & $VmRun @VmArgs 2>&1
+    $out = & $VmRun @VmArgs 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "vmrun failed (exit $LASTEXITCODE): $($VmArgs -join ' ') :: $out"
+    }
+    return $out
 }
 
 function Restore-VmAndStart($vmx) {
@@ -103,9 +128,11 @@ function Restore-VmAndStart($vmx) {
     if (-not $DryRun) { Start-Sleep -Seconds 30 }   # let the guest boot + onPC services settle
 }
 
-function Stop-Vm($vmx) {
+function Stop-VM($vmx) {
+    # Best-effort: a failed stop must not mask the real test error or abort the run.
     Log "  stop" "Cyan"
-    Invoke-VmRun @("-T","ws","stop",$vmx,"soft") | Out-Null
+    try { Invoke-VmRun @("-T","ws","stop",$vmx,"soft") | Out-Null }
+    catch { Log "  stop failed: $_" "DarkYellow" }
 }
 
 # ---------------------------------------------------------------
@@ -118,8 +145,9 @@ function Test-Showfiles($entry) {
     # A4 is a NEGATIVE test (newer showfile in older onPC) -> success = EXP-F.
     if ($DryRun) { return @{ A1="P"; A2="P"; A3="P"; A4="EXP-F"; A5="P" } }
     # TODO: run your .show.gz parse/export/round-trip tests against the guest.
-    # Example pattern using runProgramInGuest:
-    #   Invoke-VmRun @("-T","ws","-gu",$GuestUser,"-gp",$GuestPass,
+    # Example pattern using runProgramInGuest (creds from Get-GuestCredential):
+    #   $c = Get-GuestCredential
+    #   Invoke-VmRun @("-T","ws","-gu",$c.UserName,"-gp",$c.GetNetworkCredential().Password,
     #     "runProgramInGuest",$entry.Vmx,"C:\tool\run-showfile-tests.exe","--out","C:\out\sf.json")
     # then copyFileFromGuestToHost and parse the JSON.
     return @{ A1="N/A"; A2="N/A"; A3="N/A"; A4="N/A"; A5="N/A" }
@@ -129,8 +157,8 @@ function Test-Network($entry) {
     # Group rule: only join a live MA-Net2 session with same ProtocolEra peers.
     # B4 cross-era is a NEGATIVE test -> success = clean no-join (EXP-F).
     if ($DryRun) {
-        $osc = if ([version]$entry.Branch -ge [version]"3.0") { "P" } else { "N/A" }  # OSC arrives in the 3.x line
-        return @{ B1="P"; B2=$osc; B3="P"; B4="EXP-F"; B5="P" }
+        # grandMA2 has no native OSC (grandMA3 feature / third-party plugin only) -> B2 = N/A.
+        return @{ B1="P"; B2="N/A"; B3="P"; B4="EXP-F"; B5="P" }
     }
     return @{ B1="N/A"; B2="N/A"; B3="N/A"; B4="N/A"; B5="N/A" }
 }
@@ -138,7 +166,7 @@ function Test-Network($entry) {
 function Test-DMX($entry) {
     # Requires real MA hardware on the bridge for parameter unlock (C3 stays N/A in dry-run).
     if ($DryRun) {
-        $sacn = if ([version]$entry.Branch -ge [version]"3.0") { "P" } else { "N/A" }  # sACN (E1.31) support era
+        $sacn = if ([version]$entry.Branch -ge [version]"2.4") { "P" } else { "N/A" }  # sACN (E1.31) support floor = v2.4
         return @{ C1="P"; C2=$sacn; C3="N/A"; C4="P" }
     }
     return @{ C1="N/A"; C2="N/A"; C3="N/A"; C4="N/A" }
@@ -152,8 +180,8 @@ function Test-FixtureXML($entry) {
 # ---------------------------------------------------------------
 # MAIN LOOP
 # ---------------------------------------------------------------
-if (-not $DryRun -and -not (Test-Path $VmRun)) { Log "vmrun not found at $VmRun" "Red"; exit 1 }
 $logDir = Split-Path $ResultsCsv; if (!(Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir -Force | Out-Null }
+if (-not $DryRun -and -not (Test-Path $VmRun)) { Log "vmrun not found at $VmRun" "Red"; exit 1 }
 
 Log "=== grandMA2 onPC compatibility audit ===" "Green"
 if ($DryRun) { Log "*** DRY-RUN: VMware mocked, sample results emitted, no real VMs touched ***" "Magenta" }
@@ -165,12 +193,12 @@ foreach ($entry in $Manifest) {
 
     if (-not $entry.Obtainable) {
         Log "  BLOCKED - installer not obtainable" "Red"
-        "A1 A2 A3 A4 A5 B1 B2 B3 B4 B5 C1 C2 C3 C4 D1 D2 D3 D4".Split(" ") | ForEach-Object { $row[$_]="BLK" }
+        $TestIds | ForEach-Object { $row[$_]="BLK" }
         $results.Add([pscustomobject]$row); continue
     }
     if (-not $DryRun -and -not (Test-Path $entry.Vmx)) {
         Log "  MISSING VMX: $($entry.Vmx)" "Red"
-        "A1 A2 A3 A4 A5 B1 B2 B3 B4 B5 C1 C2 C3 C4 D1 D2 D3 D4".Split(" ") | ForEach-Object { $row[$_]="BLK" }
+        $TestIds | ForEach-Object { $row[$_]="BLK" }
         $results.Add([pscustomobject]$row); continue
     }
 
@@ -189,7 +217,7 @@ foreach ($entry in $Manifest) {
         $row["error"]=$_.Exception.Message
     }
     finally {
-        Stop-Vm $entry.Vmx
+        Stop-VM $entry.Vmx
     }
     $results.Add([pscustomobject]$row)
 }

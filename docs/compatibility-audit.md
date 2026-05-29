@@ -22,32 +22,36 @@
 
 ## 2. Version matrix
 
-Branch list per MA's release-notes index. Fill `Build` with the exact archive build number when obtained, `Obtainable` with Y/N, and `Base OS` with the image used.
+Branch list per MA's release-notes index. Fill `Build` with the exact archive build number when obtained, `Obtainable` with Y/N, and `Base OS` with the image used. Each **Branch** links to that version's official release notes (verified reachable); use the release notes to confirm the exact build before downloading.
 
 | Branch | Example build | Target base OS | Obtainable (Y/N) | Notes |
 |---|---|---|---|---|
-| 3.9 | 3.9.61.5 / 3.9.63.6 | Win10 | | Current; 3.9.63.6 via gMA3 page |
-| 3.8 | 3.8.0 | Win10 | | |
-| 3.7 | 3.7.x | Win10 | | |
-| 3.6 | 3.6.x | Win10 | | |
-| 3.5 | 3.5.x | Win10 | | |
-| 3.4 | 3.4.x | Win10 | | |
-| 3.3 | 3.3.x | Win10 | | |
-| 3.2 | 3.2.x | Win7/10 | | |
-| 3.1 | 3.1.x | Win7 | | |
-| 3.0 | 3.0.x | Win7 | | grandMA1 compat mode removed at 3.0 |
-| 2.9 | 2.9.1.x | Win7 | | **MA-Net2 protocol boundary (post)** |
-| 2.8 | 2.8.x | Win7 | | **MA-Net2 protocol boundary (pre)** |
-| 2.7 | 2.7.x | Win7 | | |
-| 2.6 | 2.6.x | Win7 | | |
-| 2.5 | 2.5.x | Win7 | | |
-| 2.4 | 2.4.x | Win7 | | |
-| 2.3 | 2.3.x | WinXP/7 | | Availability risk |
-| 2.2 | 2.2.x | WinXP/7 | | Availability risk |
-| 2.1 | 2.1.x | WinXP/7 | | Availability risk |
-| 2.0 | 2.0.x | WinXP/7 | | Availability risk |
+| [3.9](https://help.malighting.com/grandMA2/en/help/release_notes/key_releasenotes.html) | 3.9.61.5 / 3.9.63.6 | Win10 | | Current; final grandMA2 branch (Feb 2025); 3.9.63.6 via gMA3 page |
+| [3.8](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v3_8.html) | 3.8.0 | Win10 | | |
+| [3.7](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v3_7.html) | 3.7.x | Win10 | | |
+| [3.6](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v3_6.html) | 3.6.x | Win10 | | |
+| [3.5](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v3_5.html) | 3.5.x | Win10 | | |
+| [3.4](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v3_4.html) | 3.4.x | Win10 | | |
+| [3.3](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v3_3.html) | 3.3.x | Win10 | | Art-Net RDM added |
+| [3.2](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v3_2.html) | 3.2.x | Win7/10 | | |
+| [3.1](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v3.1.html) | 3.1.x | Win7 | | Art-Net 3 added |
+| [3.0](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v3_0.html) | 3.0.x | Win7 | | grandMA1 compat mode removed at 3.0 (downgrade to 2.9.1.1 to regain) |
+| [2.9](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v2_9.html) | 2.9.1.x | Win7 | | **MA-Net2 protocol boundary (post)** |
+| [2.8](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v2_8.html) | 2.8.x | Win7 | | **MA-Net2 protocol boundary (pre)** |
+| [2.7](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v2_7.html) | 2.7.x | Win7 | | |
+| [2.6](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v2_6.html) | 2.6.x | Win7 | | |
+| [2.5](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v2_5.html) | 2.5.x | Win7 | | |
+| [2.4](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v2_4.html) | 2.4.x | Win7 | | **sACN (E1.31) support floor** |
+| [2.3](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v2_3.html) | 2.3.x | WinXP/7 | | Availability risk; pre-sACN (Art-Net only) |
+| [2.2](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v2_2.html) | 2.2.x | WinXP/7 | | Availability risk; pre-sACN (Art-Net only) |
+| [2.1](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v2_1.html) | 2.1.x | WinXP/7 | | Availability risk; pre-sACN (Art-Net only) |
+| [2.0](https://help.malighting.com/grandMA2/en/help/release_notes/key_rn_v2_0.html) | 2.0.x | WinXP/7 | | Availability risk; pre-sACN (Art-Net only) |
 
-Obtain archived builds from: malighting.com → Downloads → grandMA2 → **Software + Release Notes** → scroll → **Archive**.
+**Downloads:** the installers themselves are not directly linkable — they are EULA-gated behind the
+downloads UI. Get them from the canonical
+[grandMA2 downloads page](https://www.malighting.com/downloads/products/grandma2/) → **Software +
+Release Notes** → scroll down → **Archive**. The per-branch links above point to the matching release
+notes (stable URLs) so you can confirm the exact build first.
 
 ---
 
@@ -92,20 +96,20 @@ Record the showfile schema/version string per onPC build — that's your real co
 
 | Test | Procedure | Pass criterion |
 |---|---|---|
-| B1 Telnet remote | Connect port 30000, authenticate, issue command set | All commands ack; capture any unsupported keywords |
-| B2 OSC in/out | Send/receive configured OSC; verify mapping | Round-trip correct (skip if version predates OSC) |
+| B1 Telnet remote | Connect TCP **30000** (control; 30001 is read-only monitor), `login NAME PASS`, issue command set | All commands ack; capture any unsupported keywords |
+| B2 OSC in/out | grandMA2 has **no native OSC** — OSC exists only via third-party plugins (native OSC is a grandMA3 feature) | `N/A` unless an OSC plugin is staged; if so, verify round-trip mapping |
 | B3 MA-Net2 join (same era) | Tool/station joins session within its protocol cohort | Joins, syncs, shows as station |
 | B4 MA-Net2 cross-era (negative) | Attempt pre-2.9 ↔ 2.9+ session | Expected: no join — confirm clean failure, no hang |
-| B5 Session role | Verify Master/Connected behavior, DMX from Master only | Matches documented session model |
+| B5 Session role | Verify Master/Connected behavior, DMX from Master only | Matches documented session model (only the Master transmits DMX) |
 
 ### C. DMX output (Art-Net / sACN)
 Standards-based — expect high version-stability; the value is confirming *where support begins*.
 
 | Test | Procedure | Pass criterion |
 |---|---|---|
-| C1 Art-Net output | Capture packets; verify universes/values | Conforms to Art-Net spec, correct mapping |
-| C2 sACN (E1.31) output | Capture packets (skip if version predates sACN) | Conforms to E1.31; priority/universe correct |
-| C3 Parameter-unlock dependency | Confirm DMX only flows with MA hardware licensing params | Behavior matches parameter model |
+| C1 Art-Net output | Capture packets; verify universes/values | Conforms to Art-Net spec, correct mapping (Art-Net 3 from 3.1, RDM-over-Art-Net from 3.3) |
+| C2 sACN (E1.31) output | Capture packets — **sACN support floor is v2.4**; 2.0–2.3 are Art-Net only | `N/A` for pre-2.4; else conforms to E1.31, priority/universe correct |
+| C3 Parameter-unlock dependency | Bare onPC outputs **0 parameters**; MA hardware (Node/Wing/NPU) unlocks them, **4096 max per session** (NPU licenses params but has no DMX ports of its own) | Behavior matches the parameter-expansion model |
 | C4 Output parity | Same patch across versions yields identical DMX | Byte-identical frames |
 
 ### D. Fixture library / XML
