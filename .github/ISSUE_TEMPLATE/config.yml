@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Read the audit framework first
+    url: https://github.com/thisis-romar/grandMA2-archive-agent/blob/main/docs/compatibility-audit.md
+    about: The constraints, version matrix, and per-interface test plans are documented here — please skim before filing.
