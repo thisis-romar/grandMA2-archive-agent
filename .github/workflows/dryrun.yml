@@ -1,0 +1,35 @@
+name: Harness dry-run
+
+# Smoke-test the compatibility harness end to end without VMware/VMs/MA software.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  dryrun:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run harness in -DryRun mode
+        shell: pwsh
+        run: pwsh -NoProfile -File ./scripts/gMA2_Compat_Harness.ps1 -DryRun
+
+      - name: Verify a results CSV was produced
+        shell: pwsh
+        run: |
+          $csv = Get-ChildItem results/demo_results_*.csv -ErrorAction SilentlyContinue
+          if (-not $csv) { Write-Error "No results/demo_results_*.csv was produced by the dry run"; exit 1 }
+          $rows = Import-Csv $csv[-1]
+          Write-Host "Dry-run produced $($csv[-1].Name) with $($rows.Count) rows."
+          if ($rows.Count -lt 1) { Write-Error "Results CSV is empty"; exit 1 }
+
+      - name: Upload results CSV
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dryrun-results
+          path: results/demo_results_*.csv
+          if-no-files-found: ignore

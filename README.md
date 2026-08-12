@@ -2,6 +2,7 @@
 
 > Compatibility-audit tooling for certifying a third-party tool against every obtainable grandMA2 onPC release.
 
+[![Harness dry-run](https://github.com/thisis-romar/grandMA2-archive-agent/actions/workflows/dryrun.yml/badge.svg)](https://github.com/thisis-romar/grandMA2-archive-agent/actions/workflows/dryrun.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![PowerShell 5.1+](https://img.shields.io/badge/PowerShell-5.1%2B-5391FE?logo=powershell&logoColor=white)
 ![Platform: Windows + VMware](https://img.shields.io/badge/platform-Windows%20%2B%20VMware-0078D6)
